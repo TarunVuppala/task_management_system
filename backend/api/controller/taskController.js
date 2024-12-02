@@ -2,12 +2,21 @@ const { parse } = require('date-fns');
 const prisma = require('../../src/prismaClient');
 
 module.exports.getTasks = async (req, res) => {
-    try {
-        const { status } = req.query;
+    const { userId } = req.user;
+    const { isCompleted } = req.query;
 
-        const tasks = status
-            ? await prisma.task.findMany({ where: { status: status === "true" } })
-            : await prisma.task.findMany();
+    try {
+        const tasks = isCompleted
+            ? await prisma.task.findMany({
+                  where: {
+                      user_id: userId,
+                      is_completed: isCompleted === 'true',
+                  },
+              })
+            : await prisma.task.findMany({
+                  where: { user_id: userId },
+              });
+
         res.status(200).json({ success: true, tasks });
     } catch (error) {
         console.error("Error fetching tasks:", error);
@@ -16,11 +25,13 @@ module.exports.getTasks = async (req, res) => {
 };
 
 module.exports.createTask = async (req, res) => {
-    try {
-        const { title, description, status = false, dueDate } = req.body;
+    const { userId } = req.user;
 
-        if (!title || !description || !dueDate) {
-            return res.status(400).json({ success: false, error: "Title, description, and due date are required" });
+    try {
+        const { title, description, isCompleted = false, dueDate } = req.body;
+
+        if (!title || !dueDate) {
+            return res.status(400).json({ success: false, error: "Title and due date are required" });
         }
 
         const parsedDate = parse(dueDate, 'dd/MM/yyyy', new Date());
@@ -32,8 +43,9 @@ module.exports.createTask = async (req, res) => {
             data: {
                 title,
                 description,
-                status,
-                dueDate: parsedDate,
+                is_completed: isCompleted,
+                due_date: parsedDate,
+                user_id: userId,
             },
         });
 
@@ -44,14 +56,15 @@ module.exports.createTask = async (req, res) => {
     }
 };
 
-
 module.exports.updateTask = async (req, res) => {
+    const { userId } = req.user;
+
     try {
         const { id } = req.params;
-        const { title, description, status, dueDate } = req.body;
+        const { title, description, isCompleted, dueDate } = req.body;
 
-        if (!title || !description || !dueDate) {
-            return res.status(400).json({ success: false, error: "Title, description, and due date are required" });
+        if (!title || !dueDate) {
+            return res.status(400).json({ success: false, error: "Title and due date are required" });
         }
 
         const parsedDate = parse(dueDate, 'dd/MM/yyyy', new Date());
@@ -59,16 +72,21 @@ module.exports.updateTask = async (req, res) => {
             return res.status(400).json({ success: false, error: "Invalid due date format. Please use dd/mm/yyyy" });
         }
 
-        const task = await prisma.task.update({
-            where: { id: parseInt(id) },
+        const task = await prisma.task.updateMany({
+            where: { id: parseInt(id), user_id: userId },
             data: {
                 title,
                 description,
-                status,
-                dueDate: new Date(parsedDate)
+                is_completed: isCompleted,
+                due_date: parsedDate,
             },
         });
-        res.status(200).json({ success: true, task });
+
+        if (task.count === 0) {
+            return res.status(404).json({ success: false, error: "Task not found or unauthorized" });
+        }
+
+        res.status(200).json({ success: true, message: "Task updated successfully" });
     } catch (error) {
         console.error("Error updating task:", error);
         res.status(500).json({ success: false, error: "Failed to update task" });
@@ -76,12 +94,18 @@ module.exports.updateTask = async (req, res) => {
 };
 
 module.exports.deleteTask = async (req, res) => {
+    const { userId } = req.user;
     const { id } = req.params;
 
     try {
-        await prisma.task.delete({
-            where: { id: parseInt(id) },
+        const task = await prisma.task.deleteMany({
+            where: { id: parseInt(id), user_id: userId },
         });
+
+        if (task.count === 0) {
+            return res.status(404).json({ success: false, error: "Task not found or unauthorized" });
+        }
+
         res.status(204).json({ success: true, message: "Task deleted successfully" });
     } catch (error) {
         console.error("Error deleting task:", error);
@@ -90,18 +114,21 @@ module.exports.deleteTask = async (req, res) => {
 };
 
 module.exports.toggleStatus = async (req, res) => {
+    const { userId } = req.user;
     const { id } = req.params;
 
     try {
-        const task = await prisma.task.findUnique({ where: { id: parseInt(id) } });
+        const task = await prisma.task.findFirst({
+            where: { id: parseInt(id), user_id: userId },
+        });
 
         if (!task) {
-            return res.status(404).json({ success: false, error: "Task not found" });
+            return res.status(404).json({ success: false, error: "Task not found or unauthorized" });
         }
 
         const updatedTask = await prisma.task.update({
-            where: { id: parseInt(id) },
-            data: { status: !task.status },
+            where: { id: task.id },
+            data: { is_completed: !task.is_completed },
         });
 
         res.status(200).json({ success: true, task: updatedTask });

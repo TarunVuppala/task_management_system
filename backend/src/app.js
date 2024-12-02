@@ -4,7 +4,7 @@ const cors = require('cors');
 
 dotenv.config();
 
-const router = require('../api/router/taskRouter');
+const router = require('../api/router/index');
 
 const app = express();
 app.use(express.json());

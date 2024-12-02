@@ -8,10 +8,19 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique @db.VarChar(255)
+  password String @db.VarChar(255)
+  tasks    Task[]
+}
+
 model Task {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  dueDate     DateTime
-  status      Boolean
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(255)
+  description  String?  @db.Text
+  due_date     DateTime
+  is_completed Boolean  @default(false)
+  user_id      Int
+  user         User     @relation(fields: [user_id], references: [id])
 }
