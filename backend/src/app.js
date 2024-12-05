@@ -1,26 +1,28 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
 
 dotenv.config();
 
-const router = require('../api/router/index');
+import router from '../api/router/index.js';
+import auth from '../middleware/auth.js';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-    origin: ['http://localhost:3000'],
-    methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH']
+    origin: ['http://localhost:5173'],
+    methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'],
+    credentials: true
 }));
 
 app.use('/api', router);
 
-app.get('/', (req, res) => {
+app.get('/', auth, (req, res) => {
     res.json(200).send({
         message: 'Welcome to Task Management System',
         success: true
     });
 });
 
-module.exports = app;
+export default app;

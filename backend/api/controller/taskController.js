@@ -1,21 +1,21 @@
-const { parse } = require('date-fns');
-const prisma = require('../../src/prismaClient');
+import { parseISO } from 'date-fns';
+import prisma from '../../src/prismaClient.js';
 
-module.exports.getTasks = async (req, res) => {
+export const getTasks = async (req, res) => {
     const { userId } = req.user;
     const { isCompleted } = req.query;
 
     try {
         const tasks = isCompleted
             ? await prisma.task.findMany({
-                  where: {
-                      user_id: userId,
-                      is_completed: isCompleted === 'true',
-                  },
-              })
+                where: {
+                    user_id: userId,
+                    is_completed: isCompleted === 'true',
+                },
+            })
             : await prisma.task.findMany({
-                  where: { user_id: userId },
-              });
+                where: { user_id: userId },
+            });
 
         res.status(200).json({ success: true, tasks });
     } catch (error) {
@@ -24,26 +24,26 @@ module.exports.getTasks = async (req, res) => {
     }
 };
 
-module.exports.createTask = async (req, res) => {
+export const createTask = async (req, res) => {
     const { userId } = req.user;
 
     try {
-        const { title, description, isCompleted = false, dueDate } = req.body;
+        const { title, description, is_completed = false, due_date } = req.body;
 
-        if (!title || !dueDate) {
+        if (!title || !due_date) {
             return res.status(400).json({ success: false, error: "Title and due date are required" });
         }
 
-        const parsedDate = parse(dueDate, 'dd/MM/yyyy', new Date());
+        const parsedDate = new Date(due_date);
         if (isNaN(parsedDate)) {
-            return res.status(400).json({ success: false, error: "Invalid due date format. Please use dd/mm/yyyy" });
+            return res.status(400).json({ success: false, error: "Invalid due date format. Please use ISO format." });
         }
 
         const task = await prisma.task.create({
             data: {
                 title,
                 description,
-                is_completed: isCompleted,
+                is_completed,
                 due_date: parsedDate,
                 user_id: userId,
             },
@@ -56,20 +56,20 @@ module.exports.createTask = async (req, res) => {
     }
 };
 
-module.exports.updateTask = async (req, res) => {
+export const updateTask = async (req, res) => {
     const { userId } = req.user;
 
     try {
         const { id } = req.params;
-        const { title, description, isCompleted, dueDate } = req.body;
+        const { title, description, is_completed, due_date } = req.body;
 
-        if (!title || !dueDate) {
+        if (!title || !due_date) {
             return res.status(400).json({ success: false, error: "Title and due date are required" });
         }
 
-        const parsedDate = parse(dueDate, 'dd/MM/yyyy', new Date());
+        const parsedDate = parseISO(due_date);
         if (isNaN(parsedDate)) {
-            return res.status(400).json({ success: false, error: "Invalid due date format. Please use dd/mm/yyyy" });
+            return res.status(400).json({ success: false, error: "Invalid due date format. Please use ISO format." });
         }
 
         const task = await prisma.task.updateMany({
@@ -77,23 +77,27 @@ module.exports.updateTask = async (req, res) => {
             data: {
                 title,
                 description,
-                is_completed: isCompleted,
-                due_date: parsedDate,
+                is_completed,
+                due_date: parsedDate
             },
+        });
+
+        const tasks = await prisma.task.findMany({
+            where: { user_id: userId },
         });
 
         if (task.count === 0) {
             return res.status(404).json({ success: false, error: "Task not found or unauthorized" });
         }
 
-        res.status(200).json({ success: true, message: "Task updated successfully" });
+        res.status(200).json({ success: true, message: "Task updated successfully", tasks });
     } catch (error) {
         console.error("Error updating task:", error);
         res.status(500).json({ success: false, error: "Failed to update task" });
     }
 };
 
-module.exports.deleteTask = async (req, res) => {
+export const deleteTask = async (req, res) => {
     const { userId } = req.user;
     const { id } = req.params;
 
@@ -113,7 +117,7 @@ module.exports.deleteTask = async (req, res) => {
     }
 };
 
-module.exports.toggleStatus = async (req, res) => {
+export const toggleStatus = async (req, res) => {
     const { userId } = req.user;
     const { id } = req.params;
 

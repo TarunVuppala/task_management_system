@@ -1,13 +1,13 @@
-const express = require('express');
+import express from 'express';
 
-const taskTouter = require('./taskRouter');
-const authRouter = require('./authRouter')
-const auth = require('../../middleware/auth');
+import taskTouter from './taskRouter.js';
+import authRouter from './authRouter.js'
+import auth from '../../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/verify', (req, res) => {
-    res.json(200).send({
+router.get('/verify', auth, (req, res) => {
+    res.status(200).json({
         message: 'Welcome to Task Management System',
         success: true
     });
@@ -17,4 +17,4 @@ router.use('/tasks', auth, taskTouter);
 
 router.use('/auth', authRouter);
 
-module.exports = router;
+export default router;

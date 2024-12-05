@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const prisma = require('../../src/prismaClient');
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import prisma from '../../src/prismaClient.js';
 
-module.exports.login = async (req, res) => {
+export const login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -18,14 +18,14 @@ module.exports.login = async (req, res) => {
 
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        res.status(200).json({ success: true, token });
+        res.status(200).json({ success: true, user: user.email, token });
     } catch (error) {
         console.error("Error logging in:", error);
         res.status(500).json({ success: false, error: "Failed to log in" });
     }
 };
 
-module.exports.signup = async (req, res) => {
+export const signup = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
