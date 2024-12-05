@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080';
+const BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 axios.defaults.withCredentials = true;
 
@@ -53,7 +53,7 @@ const useAppStore = create((set, get) => ({
             if (data.success) {
                 set({ user: data.user, isAuthenticated: true, error: null });
             } else {
-                set({ error: 'Failed to verify token', isAuthenticated: false, user: null });
+                set({ isAuthenticated: false, user: null });
                 get().clearToken();
             }
         } catch (error) {
