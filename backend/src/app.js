@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://task-management-system-fawn.vercel.app'],
+    origin: ['http://localhost:5173', 'https://task-management-system-fawn.vercel.app', 'task-management-system-git-main-taruns-projects-93c37392.vercel.app', 'task-management-system-qz59cs00d-taruns-projects-93c37392.vercel.app'],
     methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'],
     credentials: true
 }));
