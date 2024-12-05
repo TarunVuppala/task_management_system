@@ -58,7 +58,7 @@ const useAppStore = create((set, get) => ({
             }
         } catch (error) {
             console.error("Error verifying token:", error);
-            set({ error: 'Failed to verify token', isAuthenticated: false, user: null });
+            set({ isAuthenticated: false, user: null });
             get().clearToken();
         } finally {
             set({ isLoadingToken: false });
